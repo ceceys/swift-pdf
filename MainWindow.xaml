@@ -1,0 +1,144 @@
+<Window x:Class="SwiftPdf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SWIFT PDF" Width="600" Height="560" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterScreen" Background="#F3F5F8"
+        FontFamily="Segoe UI" FontSize="13" Foreground="#1F2933"
+        AllowDrop="True" DragEnter="OnDragEnter" DragOver="OnDragEnter" DragLeave="OnDragLeave" Drop="OnDrop">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="Accent" Color="#2B6CB0"/>
+        <SolidColorBrush x:Key="Muted" Color="#6B7785"/>
+
+        <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Padding" Value="18,8"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="BtnLight" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+            <Setter Property="Background" Value="#E6EEF7"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Başlık -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,0,0,14">
+            <Image Source="Assets/swiftpdf.ico" Width="36" Height="36" Margin="0,0,12,0"/>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="SWIFT PDF" FontSize="20" FontWeight="Bold"/>
+                <TextBlock Text="Kuveyt Türk döviz transfer mailini tek sayfa SWIFT belgesine çevirir"
+                           Foreground="{StaticResource Muted}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Bırakma alanı -->
+        <Border Grid.Row="1" x:Name="DropZone" Background="White" CornerRadius="14" Padding="24"
+                BorderBrush="#C9D3DF" BorderThickness="2">
+            <Grid>
+                <!-- Bekleme ekranı -->
+                <StackPanel x:Name="IdlePanel" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="⬇" FontSize="40" HorizontalAlignment="Center" Foreground="{StaticResource Accent}"/>
+                    <TextBlock Text="Adobe PDF dosyasını buraya bırakın" FontSize="17" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,8,0,4"/>
+                    <TextBlock Text="ya da" HorizontalAlignment="Center" Foreground="{StaticResource Muted}" Margin="0,0,0,10"/>
+                    <Button Content="Dosya seç…" Style="{StaticResource Btn}" Margin="0" HorizontalAlignment="Center"
+                            Click="OnPick"/>
+                </StackPanel>
+
+                <!-- Çalışıyor -->
+                <StackPanel x:Name="BusyPanel" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="Hazırlanıyor…" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <ProgressBar IsIndeterminate="True" Height="6" Margin="40,14,40,0" Foreground="{StaticResource Accent}"/>
+                </StackPanel>
+
+                <!-- Sonuç -->
+                <DockPanel x:Name="ResultPanel" Visibility="Collapsed" LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Background="#E3F4EA" CornerRadius="10" Padding="8,2" Margin="0,0,10,0">
+                            <TextBlock Text="✓" Foreground="#2E7D4F" FontSize="16" FontWeight="Bold"/>
+                        </Border>
+                        <TextBlock x:Name="ResultTitle" Text="SWIFT PDF hazır" FontSize="17" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="PDF'i aç" Style="{StaticResource Btn}" Click="OnOpen"/>
+                        <Button Content="Klasörü aç" Style="{StaticResource BtnLight}" Click="OnFolder"/>
+                        <Button Content="Yeni dosya" Style="{StaticResource BtnLight}" Click="OnReset"/>
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ResultList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F6F8FB" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Muted}"
+                                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!-- Hata -->
+                <DockPanel x:Name="ErrorPanel" Visibility="Collapsed">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Content="Başka dosya seç…" Style="{StaticResource Btn}" Click="OnPick"/>
+                        <Button Content="Geri" Style="{StaticResource BtnLight}" Click="OnReset"/>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center">
+                        <Border Background="#FDECEC" CornerRadius="10" Padding="14,12">
+                            <StackPanel>
+                                <TextBlock Text="Olmadı" FontWeight="SemiBold" Foreground="#B42318" FontSize="15"/>
+                                <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- Nasıl kullanılır -->
+        <Border Grid.Row="2" Margin="0,14,0,0" Padding="2,0">
+            <StackPanel>
+                <TextBlock Text="Nasıl kullanılır" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="19">
+                    1. Outlook'ta Kuveyt Türk'ün "Giden Döviz Transfer İşleminiz" mailini açın.<LineBreak/>
+                    2. Acrobat sekmesinden "Adobe PDF'e dönüştür" deyip kaydedin.<LineBreak/>
+                    3. O PDF'i bu pencereye bırakın; tek sayfa SWIFT PDF'i aynı klasöre kaydedilir.
+                </TextBlock>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,12 @@
+bin/
+obj/
+publish/
+dist/
+.vs/
+*.user
+*.suo
+
+# Gerçek SWIFT mailleri ve çıktıları depoya girmez (hesap ve kişi bilgisi içerir)
+*.pdf
+dokum.txt
+ayiklama.txt

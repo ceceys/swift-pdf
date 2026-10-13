@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\swiftpdf.ico</ApplicationIcon>
+    <AssemblyName>SwiftPdf</AssemblyName>
+    <RootNamespace>SwiftPdf</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>SWIFT PDF</Product>
+    <Description>Kuveyt Türk "Giden Döviz Transfer İşleminiz" mailini tek sayfa A4 SWIFT belgesine çevirir</Description>
+    <Authors>Cuma Ali Dirik</Authors>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF şablonu System.IO'yu örtük using'lere almıyor -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\swiftpdf.ico" />
+  </ItemGroup>
+
+</Project>
