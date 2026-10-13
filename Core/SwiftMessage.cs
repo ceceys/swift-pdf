@@ -30,11 +30,15 @@ public sealed class SwiftMessage
     public string SettlementDate { get; set; } = "";
     public string Creditor { get; set; } = "";
 
+    /// <summary>Kullanıcıya gösterilecek uyarılar (girdide kesilmiş satır, çok küçük punto).</summary>
+    public List<string> Warnings { get; } = new();
+
     /// <summary>Şablonun düz metin dökümü; testte beklenen çıktıyla karşılaştırılır.</summary>
     public string Dump()
     {
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("GIRIS: " + Intro);
+        foreach (var w in Warnings) sb.AppendLine("UYARI: " + w);
         foreach (var l in Lines)
         {
             sb.AppendLine(l.Kind switch

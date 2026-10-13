@@ -8,13 +8,13 @@ namespace SwiftPdf;
 
 public partial class MainWindow : Window
 {
-    private sealed record ResultItem(string Title, string Detail, string Path);
+    private sealed record ResultItem(string Title, string Detail, string Path, bool Ok, string Warning = "");
 
     private readonly PdfRenderer _renderer;
     private List<ResultItem> _results = new();
     private bool _busy;
 
-    public MainWindow(string? startFile = null)
+    public MainWindow(IReadOnlyList<string>? startFiles = null)
     {
         InitializeComponent();
         _renderer = new PdfRenderer(this);
@@ -27,7 +27,7 @@ public partial class MainWindow : Window
                           "\"WebView2 Runtime\" kurulumunu yapın, sonra programı yeniden açın.");
                 return;
             }
-            if (startFile != null) await RunAsync(startFile);
+            if (startFiles is { Count: > 0 }) await RunAsync(startFiles);
         };
     }
 
@@ -48,21 +48,21 @@ public partial class MainWindow : Window
     {
         OnDragLeave(sender, e);
         if (_busy) return;
-        if (!TryGetPdf(e, out var path))
+        if (!TryGetPdf(e, out var paths))
         {
             ShowError("Yalnızca PDF dosyası bırakabilirsiniz. Maili önce Outlook'ta \"Adobe PDF'e dönüştür\" ile PDF yapın.");
             return;
         }
-        await RunAsync(path!);
+        await RunAsync(paths);
     }
 
-    private static bool TryGetPdf(DragEventArgs e, out string? path)
+    private static bool TryGetPdf(DragEventArgs e, out List<string> paths)
     {
-        path = null;
+        paths = new();
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return false;
         var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-        path = files.FirstOrDefault(f => f.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
-        return path != null;
+        paths = files.Where(f => f.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)).ToList();
+        return paths.Count > 0;
     }
 
     // ---------- Düğmeler ----------
@@ -74,19 +74,21 @@ public partial class MainWindow : Window
             Title = "Adobe PDF dosyasını seçin",
             Filter = "PDF dosyası (*.pdf)|*.pdf",
             CheckFileExists = true,
+            Multiselect = true,
         };
-        if (dlg.ShowDialog(this) == true) await RunAsync(dlg.FileName);
+        if (dlg.ShowDialog(this) == true) await RunAsync(dlg.FileNames);
     }
 
     private void OnOpen(object sender, RoutedEventArgs e)
     {
-        foreach (var r in _results) Start(r.Path);
+        foreach (var r in _results.Where(r => r.Ok)) Start(r.Path);
     }
 
     private void OnFolder(object sender, RoutedEventArgs e)
     {
-        if (_results.Count == 0) return;
-        Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{_results[0].Path}\"") { UseShellExecute = true });
+        var first = _results.FirstOrDefault(r => r.Ok);
+        if (first == null) return;
+        Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{first.Path}\"") { UseShellExecute = true });
     }
 
     private void OnReset(object sender, RoutedEventArgs e) => Show(IdlePanel);
@@ -96,27 +98,50 @@ public partial class MainWindow : Window
 
     // ---------- Akış ----------
 
-    private async Task RunAsync(string input)
+    /// <summary>Bir ya da birkaç PDF'i sırayla işler; olmayanlar listede ayrıca gösterilir.</summary>
+    private async Task RunAsync(IReadOnlyList<string> inputs)
     {
         _busy = true;
         Show(BusyPanel);
+        var items = new List<ResultItem>();
+        var errors = new List<(string File, string Message)>();
         try
         {
-            var results = await Converter.ConvertAsync(input, _renderer);
-            _results = results.Select(r => new ResultItem(
-                Path.GetFileName(r.OutputPath),
-                Detail(r.Message) + "\nKaydedildi: " + Path.GetDirectoryName(r.OutputPath),
-                r.OutputPath)).ToList();
-            ResultTitle.Text = results.Count == 1 ? "SWIFT PDF hazır" : $"{results.Count} SWIFT PDF hazır";
-            ResultList.ItemsSource = _results;
+            foreach (var input in inputs)
+            {
+                try
+                {
+                    foreach (var r in await Converter.ConvertAsync(input, _renderer))
+                    {
+                        var where = "Kaydedildi: " + Path.GetDirectoryName(r.OutputPath)
+                                    + (r.SavedToFallback ? "  (girdinin klasörüne yazılamadığı için)" : "");
+                        items.Add(new ResultItem(Path.GetFileName(r.OutputPath), Detail(r.Message) + "\n" + where,
+                            r.OutputPath, true, string.Join("\n", r.Message.Warnings.Select(w => "Dikkat: " + w))));
+                    }
+                }
+                catch (UserFacingException ex) { errors.Add((Path.GetFileName(input), ex.Message)); }
+                catch (Exception ex) { errors.Add((Path.GetFileName(input), "Beklenmeyen bir hata oluştu: " + ex.Message)); }
+            }
+
+            if (items.Count == 0)
+            {
+                ShowError(errors.Count == 1
+                    ? errors[0].Message
+                    : string.Join("\n\n", errors.Select(x => x.File + ": " + x.Message)));
+                return;
+            }
+            _results = items;
+            // Dikkat isteyenler üstte: uyarılı çıktılar, sonra olmayan dosyalar, sonra sorunsuzlar.
+            var failed = errors.Select(x => new ResultItem("Olmadı: " + x.File, x.Message, "", false));
+            var shown = items.Where(i => i.Warning.Length > 0).Concat(failed)
+                .Concat(items.Where(i => i.Warning.Length == 0)).ToList();
+            int warned = items.Count(i => i.Warning.Length > 0);
+            ResultTitle.Text = (items.Count == 1 ? "SWIFT PDF hazır" : $"{items.Count} SWIFT PDF hazır")
+                               + (warned > 0 ? $"  ·  {warned} uyarı" : "")
+                               + (errors.Count > 0 ? $"  ·  {errors.Count} dosya olmadı" : "");
+            ResultList.ItemsSource = shown;
             Show(ResultPanel);
         }
-        catch (SwiftNotFoundException ex) { ShowError(ex.Message); }
-        catch (UnauthorizedAccessException)
-        {
-            ShowError("PDF'in bulunduğu klasöre yazılamadı. Dosyayı Masaüstü ya da Belgeler gibi bir klasöre taşıyıp yeniden deneyin.");
-        }
-        catch (Exception ex) { ShowError("Beklenmeyen bir hata oluştu: " + ex.Message); }
         finally { _busy = false; }
     }
 
@@ -140,5 +165,7 @@ public partial class MainWindow : Window
     {
         foreach (var p in new UIElement[] { IdlePanel, BusyPanel, ResultPanel, ErrorPanel })
             p.Visibility = p == panel ? Visibility.Visible : Visibility.Collapsed;
+        // Sonuç listesi uzunsa (uyarı, olmayan dosya) yardım kutusu yer kaplamasın.
+        HelpPanel.Visibility = panel == ResultPanel ? Visibility.Collapsed : Visibility.Visible;
     }
 }

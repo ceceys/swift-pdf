@@ -10,3 +10,4 @@ dist/
 *.pdf
 dokum.txt
 ayiklama.txt
+__pycache__/

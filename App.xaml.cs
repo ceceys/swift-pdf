@@ -17,7 +17,10 @@ public partial class App : Application
             var log = new StringBuilder();
             var debug = new StringBuilder();
             if (Environment.GetEnvironmentVariable("SWIFTPDF_DEBUG") == "1")
+            {
                 SwiftParser.Debug = s => debug.AppendLine(s);
+                SwiftParser.DebugGlyphs = Environment.GetEnvironmentVariable("SWIFTPDF_DEBUG_GLYPHS");
+            }
             var host = new Window();
             using (var renderer = new PdfRenderer(host))
             {
@@ -33,7 +36,7 @@ public partial class App : Application
                 catch (Exception ex)
                 {
                     log.AppendLine("HATA: " + ex.GetType().Name + ": " + ex.Message);
-                    code = ex is SwiftNotFoundException ? 2 : 1;
+                    code = ex is UserFacingException ? 2 : 1;
                 }
             }
             Directory.CreateDirectory(e.Args[2]);
@@ -44,8 +47,9 @@ public partial class App : Application
             return;
         }
 
-        var file = e.Args.FirstOrDefault(a => a.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) && File.Exists(a));
-        var main = new MainWindow(file);
+        // Exe simgesinin üstüne bırakılan ya da "Birlikte aç" ile verilen PDF'ler (bir ya da birkaç)
+        var files = e.Args.Where(a => a.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) && File.Exists(a)).ToList();
+        var main = new MainWindow(files);
         MainWindow = main;
         main.Show();
     }

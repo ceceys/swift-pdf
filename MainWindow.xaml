@@ -103,6 +103,18 @@
                                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Muted}"
                                                        TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                            <TextBlock Text="{Binding Warning}" Foreground="#B45309" TextWrapping="Wrap"
+                                                       Margin="0,6,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Warning}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -130,7 +142,7 @@
         </Border>
 
         <!-- Nasıl kullanılır -->
-        <Border Grid.Row="2" Margin="0,14,0,0" Padding="2,0">
+        <Border Grid.Row="2" x:Name="HelpPanel" Margin="0,14,0,0" Padding="2,0">
             <StackPanel>
                 <TextBlock Text="Nasıl kullanılır" FontWeight="SemiBold" Margin="0,0,0,4"/>
                 <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="19">

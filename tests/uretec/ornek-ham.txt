@@ -1,0 +1,80 @@
+15 January 2026 Thursday 10:15:00
+---------------------------- Message Header ----------------------------
+Swift INPUT FIN pacs.008.001.08
+From
+FI Id
+Financial Institution Identification
+BICFI    :    KTEFTRISXXX
+( ISTANBUL KUVEYT TURK KATILIM BANKASI A.S.)
+To
+FI Id
+Financial Institution Identification
+BICFI    :    EXMPDEFFXXX
+( FRANKFURT AM MAIN EXAMPLE BANK AG)
+Biz Msg Idr    :    100000001
+Message Definition Identifier    :    pacs.008.001.08
+Biz Svc    :    swift.cbprplus.02
+Creation Date    :    2026-01-15T10:15:00.1234567+03:00
+---------------------------- Message Text ------------------------------
+FI To FI Customer Credit Transfer
+Group Header
+Message Identification    :    100000001
+Creation Date Time    :    2026-01-15T10:15:00.1234567+03:00
+Number Of Transactions    :    1
+Settlement Information
+Settlement Method    :    INDA
+Credit Transfer Transaction Information
+Payment Identification
+Instruction Identification    :    100000001
+End To End Identification    :    NOTPROVIDED
+UETR    :    00000000-0000-4000-8000-000000000001
+Payment Type Information
+Service Level
+Code    :    G001
+Interbank Settlement Amount    :    #EUR1.250,00#
+Interbank Settlement Date    :    2026-01-15
+Instructed Amount    :    #EUR1.250,00#
+Charge Bearer    :    SHAR
+Instructing Agent
+Financial Institution Identification
+BICFI    :    KTEFTRISXXX
+( ISTANBUL KUVEYT TURK KATILIM BANKASI A.S.)
+Instructed Agent
+Financial Institution Identification
+BICFI    :    EXMPDEFFXXX
+( FRANKFURT AM MAIN EXAMPLE BANK AG)
+Debtor
+Name    :    ORNEK DIS TICARET ANONIM SIRKETI
+Postal Address
+Street Name    :    ORNEK MAH. DENEME CAD.
+Building Number    :    1
+Town Name    :    ISTANBUL
+District Name    :    MERKEZ
+Country    :    TR
+Debtor Account
+Identification
+IBAN    :    TR000000000000000000000001
+Debtor Agent
+Financial Institution Identification
+BICFI    :    KTEFTRISXXX
+( ISTANBUL KUVEYT TURK KATILIM BANKASI A.S.)
+Creditor Agent
+Financial Institution Identification
+BICFI    :    EXMPITMMXXX
+( MILANO EXAMPLE BANCA S.P.A.)
+Creditor
+Name    :    EXAMPLE TRADING S.R.L.
+Postal Address
+Address Line    :    VIA ESEMPIO 1 00100 ROMA ITALY
+Creditor Account
+Identification
+IBAN    :    IT00X0000000000000000000001
+Remittance Information
+Unstructured    :    INVOICE 2026-001
+----------------------- Interventions ----------------------------------
+Category    :    Transmission Report
+Creation Time (Paygate Maestro)    :    15/01/2026 10:15:00
+Application    :    SWIFT Interface
+Operator(s)    :    SYSTEM
+Message View    :    Transmission Report
+Text    :    {1:F21KTEFTRISAXXX0000000000001}{4:{177:2601151015}{451:0}{311:ACK}{108:100000001}}

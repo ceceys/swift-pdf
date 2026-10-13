@@ -1,0 +1,80 @@
+n  | 15 January 2026 Thursday 10:15:00
+b  | ---------------------------- Message Header ----------------------------
+b  | Swift INPUT FIN pacs.008.001.08
+b  | From
+b  | FI Id
+b  | Financial Institution Identification
+kv |    BICFI                            : KTEFTRISXXX
+n  |                                       ( ISTANBUL KUVEYT TURK KATILIM BANKASI A.S.)
+b  | To
+b  | FI Id
+b  | Financial Institution Identification
+kv |    BICFI                            : EXMPDEFFXXX
+n  |                                       ( FRANKFURT AM MAIN EXAMPLE BANK AG)
+kv |    Biz Msg Idr                      : 100000001
+kv |    Message Definition Identifier    : pacs.008.001.08
+kv |    Biz Svc                          : swift.cbprplus.02
+kv |    Creation Date                    : 2026-01-15T10:15:00.1234567+03:00
+b  | ---------------------------- Message Text ------------------------------
+b  | FI To FI Customer Credit Transfer
+b  | Group Header
+kv |    Message Identification              : 100000001
+kv |    Creation Date Time                  : 2026-01-15T10:15:00.1234567+03:00
+kv |    Number Of Transactions              : 1
+b  | Settlement Information
+kv |    Settlement Method                   : INDA
+b  | Credit Transfer Transaction Information
+b  | Payment Identification
+kv |    Instruction Identification          : 100000001
+kv |    End To End Identification           : NOTPROVIDED
+kv |    UETR                                : 00000000-0000-4000-8000-000000000001
+b  | Payment Type Information
+b  | Service Level
+kv |    Code                                : G001
+kv |    Interbank Settlement Amount         : #EUR1.250,00#
+kv |    Interbank Settlement Date           : 2026-01-15
+kv |    Instructed Amount                   : #EUR1.250,00#
+kv |    Charge Bearer                       : SHAR
+b  | Instructing Agent
+b  | Financial Institution Identification
+kv |    BICFI                               : KTEFTRISXXX
+n  |                                          ( ISTANBUL KUVEYT TURK KATILIM BANKASI A.S.)
+b  | Instructed Agent
+b  | Financial Institution Identification
+kv |    BICFI                               : EXMPDEFFXXX
+n  |                                          ( FRANKFURT AM MAIN EXAMPLE BANK AG)
+b  | Debtor
+kv |    Name                                : ORNEK DIS TICARET ANONIM SIRKETI
+b  | Postal Address
+kv |    Street Name                         : ORNEK MAH. DENEME CAD.
+kv |    Building Number                     : 1
+kv |    Town Name                           : ISTANBUL
+kv |    District Name                       : MERKEZ
+kv |    Country                             : TR
+b  | Debtor Account
+b  | Identification
+kv |    IBAN                                : TR000000000000000000000001
+b  | Debtor Agent
+b  | Financial Institution Identification
+kv |    BICFI                               : KTEFTRISXXX
+n  |                                          ( ISTANBUL KUVEYT TURK KATILIM BANKASI A.S.)
+b  | Creditor Agent
+b  | Financial Institution Identification
+kv |    BICFI                               : EXMPITMMXXX
+n  |                                          ( MILANO EXAMPLE BANCA S.P.A.)
+b  | Creditor
+kv |    Name                                : EXAMPLE INTERNATIONAL INDUSTRIAL MACHINERY AND EQUIPMENT TRADING COMPANY LIMITED
+b  | Postal Address
+kv |    Address Line                        : VIA ESEMPIO 1 00100 ROMA ITALY
+b  | Creditor Account
+b  | Identification
+kv |    IBAN                                : IT00X0000000000000000000001
+b  | Remittance Information
+kv |    Unstructured                        : INVOICE 2026-001
+b  | ----------------------- Interventions ----------------------------------
+kv | Category                       : Transmission Report
+kv | Creation Time (Paygate Maestro): 15/01/2026 10:15:00
+kv | Application                    : SWIFT Interface
+kv | Operator(s)                    : SYSTEM
+kv | Message View                   : Transmission Report
+kv | Text                           : {1:F21KTEFTRISAXXX0000000000001}{4:{177:2601151015}{451:0}{311:ACK}{108:100000001}}

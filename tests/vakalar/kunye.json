@@ -1,0 +1,119 @@
+{
+ "t01-temel": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t02-uzun-alici": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t03-uzun-banka": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t04-adres": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t05-araci-banka": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t06-diger-hesap": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t07-uzun-aciklama": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t08-bosluksuz": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t09-amac-bildirim": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t10-talimat": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t11-nihai-taraf": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t12-jpy": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250.000",
+  "doviz": "JPY"
+ },
+ "t12-usd": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.234.567,89",
+  "doviz": "USD"
+ },
+ "t13-turkce": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t14-iki-mudahale": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t15-bos-deger": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t16-iki-nokta": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t17-parantez": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "t18-cok-uzun": {
+  "ref": "100000001",
+  "tarih": "2026-01-15",
+  "tutar": "1.250,00",
+  "doviz": "EUR"
+ },
+ "_kesik_olabilir": [
+  "t08-bosluksuz"
+ ]
+}

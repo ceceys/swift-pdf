@@ -4,7 +4,7 @@
 ; Derleme: ISCC.exe setup\SwiftPdf.iss
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.0.1"
 #endif
 #define AppName "SWIFT PDF"
 #define AppPublisher "Cuma Ali Dirik"

@@ -11,7 +11,7 @@ single-page A4 PDF containing only the raw SWIFT text.*
 
 1. Outlook'ta Kuveyt Türk'ün "Giden Döviz Transfer İşleminiz" mailini açın.
 2. Acrobat sekmesinden **"Adobe PDF'e dönüştür"** deyip kaydedin.
-3. SWIFT PDF'i açın ve o PDF'i pencereye bırakın (ya da "Dosya seç…").
+3. SWIFT PDF'i açın ve o PDF'i pencereye bırakın (ya da "Dosya seç…"). Birden çok PDF birlikte bırakılabilir.
 4. Tek sayfa SWIFT PDF'i girdinin bulunduğu klasöre kaydedilir:
    `YYYY-MM-DD_Kuveyt Turk SWIFT Giden Transfer <referans>_(<tutar> <döviz>).pdf`
 
@@ -43,6 +43,24 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 Sınama kipi (pencere açmaz): `SwiftPdf.exe --test girdi.pdf cikti-klasoru` → çıktı PDF'i ve satır dökümü
 `dokum.txt`. `SWIFTPDF_DEBUG=1` ortam değişkeniyle harf konumları `ayiklama.txt`'ye yazılır.
+
+## Sınama
+
+```powershell
+dotnet build -c Release
+powershell -ExecutionPolicy Bypass -File tests\run.ps1
+```
+
+`tests\vakalar\` içindeki uydurma mailler (bütün veriler hayalidir) dört sayfa düzeninde (serbest, 370, 320 ve 280 pt
+genişlik; biri sayfa sınırına denk gelir) Microsoft Edge ile PDF'e basılır, program `--test` kipinde çalıştırılır ve
+satırlar `tests\beklenen\` ile birebir karşılaştırılır. Olumsuz vakalar (boş, bozuk, PDF olmayan dosya, SWIFT'siz
+mail) anlaşılır bir uyarı beklemelidir. Vakaları yeniden üretmek için: `py -3 tests\uretec\uret.py`.
+
+## Bilinen sınır
+
+Boşluksuz çok uzun bir değer (ör. 60 harflik bitişik açıklama) mail tablosunu sayfadan taşırırsa, PDF'e çeviren
+program sayfa kenarındaki harfleri hiç yazmayabilir; o harfler PDF'te olmadığı için geri getirilemez. Program bu
+belirtiyi görünce sonuç ekranında uyarır.
 
 ## Not
 

@@ -2,9 +2,12 @@ using UglyToad.PdfPig;
 
 namespace SwiftPdf.Core;
 
-public sealed class SwiftNotFoundException(string message) : Exception(message);
+/// <summary>Kullanıcıya olduğu gibi gösterilecek hata (dosya sorunu, SWIFT yok); sınama kipinde çıkış kodu 2.</summary>
+public class UserFacingException(string message) : Exception(message);
 
-public sealed record ConvertResult(string OutputPath, SwiftMessage Message);
+public sealed class SwiftNotFoundException(string message) : UserFacingException(message);
+
+public sealed record ConvertResult(string OutputPath, SwiftMessage Message, bool SavedToFallback = false);
 
 /// <summary>Girdi PDF'i → bir ya da birkaç tek sayfa SWIFT PDF'i.</summary>
 public static class Converter
@@ -12,7 +15,8 @@ public static class Converter
     public static async Task<List<ConvertResult>> ConvertAsync(string inputPath, PdfRenderer renderer, string? outDir = null)
     {
         var messages = new List<SwiftMessage>();
-        foreach (var c in PdfInput.Read(inputPath))
+        var candidates = PdfInput.Read(inputPath);
+        foreach (var c in candidates)
         {
             foreach (var m in SwiftParser.Parse(c.Bytes))
             {
@@ -20,12 +24,23 @@ public static class Converter
                 messages.Add(m);
             }
         }
+        if (messages.Count == 0 && candidates.All(c => !SwiftParser.HasText(c.Bytes)))
+            throw new SwiftNotFoundException(
+                "Bu PDF'te okunabilir metin yok; taranmış ya da resim olarak kaydedilmiş görünüyor. Outlook'ta maili açıp " +
+                "Acrobat sekmesinden \"Adobe PDF'e dönüştür\" ile PDF yapın.");
         if (messages.Count == 0)
             throw new SwiftNotFoundException(
                 "Bu PDF'te Kuveyt Türk SWIFT mesajı bulunamadı. Outlook'ta \"Giden Döviz Transfer İşleminiz\" mailini açıp " +
                 "Acrobat sekmesinden \"Adobe PDF'e dönüştür\" ile PDF yapın ve o dosyayı buraya bırakın.");
 
         var dir = outDir ?? Path.GetDirectoryName(Path.GetFullPath(inputPath))!;
+        bool fallback = false;
+        if (!CanWrite(dir))
+        {
+            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SWIFT PDF");
+            Directory.CreateDirectory(dir);
+            fallback = true;
+        }
         var results = new List<ConvertResult>();
         foreach (var m in messages)
         {
@@ -46,9 +61,21 @@ public static class Converter
             {
                 if (File.Exists(temp)) File.Delete(temp);
             }
-            results.Add(new ConvertResult(target, m));
+            results.Add(new ConvertResult(target, m, fallback));
         }
         return results;
+    }
+
+    private static bool CanWrite(string dir)
+    {
+        try
+        {
+            var probe = Path.Combine(dir, ".swiftpdf-" + Guid.NewGuid().ToString("N") + ".tmp");
+            File.WriteAllBytes(probe, Array.Empty<byte>());
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     /// <summary>Dosya adı biçimi, örnek: 2026-01-15_Kuveyt Turk SWIFT Giden Transfer 100000001_(1.250,00 EUR).pdf</summary>
