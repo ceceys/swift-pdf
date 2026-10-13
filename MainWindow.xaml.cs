@@ -14,13 +14,26 @@ public partial class MainWindow : Window
     private List<ResultItem> _results = new();
     private bool _busy;
 
+    private Updater.Release? _update;       // bulunan yeni sürüm
+    private bool _checking;
+    private CancellationTokenSource? _downloadCts;
+
     public MainWindow(IReadOnlyList<string>? startFiles = null)
     {
         InitializeComponent();
+        FitToWorkArea();
+        VersionRun.Text = "Sürüm " + Updater.Text(Updater.Current);
         _renderer = new PdfRenderer(this);
         Closed += (_, _) => _renderer.Dispose();
         Loaded += async (_, _) =>
         {
+            var outcome = Updater.TakeUpdateOutcome();
+            if (outcome is { Ok: true })
+                ShowBar($"SWIFT PDF {Updater.Text(Updater.Current)} sürümüne güncellendi.", BarKind.Ok);
+            else if (outcome is { Ok: false })
+                ShowBar("Güncelleme tamamlanamadı; sürüm hâlâ " + Updater.Text(Updater.Current) + ". Yeniden deneyebilirsiniz.", BarKind.Warn);
+            _ = CheckUpdatesAsync(manual: false);
+
             if (PdfRenderer.RuntimeVersion() == null)
             {
                 ShowError("Bu bilgisayarda Microsoft Edge WebView2 bileşeni yok. Windows Update'i çalıştırın ya da " +
@@ -101,7 +114,8 @@ public partial class MainWindow : Window
     /// <summary>Bir ya da birkaç PDF'i sırayla işler; olmayanlar listede ayrıca gösterilir.</summary>
     private async Task RunAsync(IReadOnlyList<string> inputs)
     {
-        _busy = true;
+        if (_busy) return;
+        SetBusy(true);
         Show(BusyPanel);
         var items = new List<ResultItem>();
         var errors = new List<(string File, string Message)>();
@@ -142,7 +156,15 @@ public partial class MainWindow : Window
             ResultList.ItemsSource = shown;
             Show(ResultPanel);
         }
-        finally { _busy = false; }
+        finally { SetBusy(false); }
+    }
+
+    /// <summary>Dönüştürme ya da güncelleme sürerken öteki başlatılamaz.</summary>
+    private void SetBusy(bool busy)
+    {
+        _busy = busy;
+        UpdateBarButton.IsEnabled = !busy;
+        CheckLink.IsEnabled = !busy;
     }
 
     private static string Detail(SwiftMessage m)
@@ -163,9 +185,155 @@ public partial class MainWindow : Window
 
     private void Show(UIElement panel)
     {
-        foreach (var p in new UIElement[] { IdlePanel, BusyPanel, ResultPanel, ErrorPanel })
+        foreach (var p in new UIElement[] { IdlePanel, BusyPanel, ResultPanel, ErrorPanel, UpdatePanel })
             p.Visibility = p == panel ? Visibility.Visible : Visibility.Collapsed;
-        // Sonuç listesi uzunsa (uyarı, olmayan dosya) yardım kutusu yer kaplamasın.
-        HelpPanel.Visibility = panel == ResultPanel ? Visibility.Collapsed : Visibility.Visible;
+        // Sonuç listesi ve güncelleme notları uzun olabilir: yardım kutusu yer kaplamasın.
+        HelpPanel.Visibility = panel == ResultPanel || panel == UpdatePanel ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>
+    /// Pencere ekranın çalışma alanından (görev çubuğu hariç) büyükse küçültülür: küçük ekranda ya da yüksek
+    /// ölçekte (ör. 1366×768, %150) alttaki düğmeler ekran dışında kalmasın.
+    /// </summary>
+    private void FitToWorkArea()
+    {
+        var wa = SystemParameters.WorkArea;
+        MinWidth = Math.Min(MinWidth, wa.Width);
+        MinHeight = Math.Min(MinHeight, wa.Height);
+        Width = Math.Min(Width, wa.Width);
+        Height = Math.Min(Height, wa.Height);
+    }
+
+    // ---------- Güncelleme ----------
+
+    private enum BarKind { Update, Ok, Warn, Info }
+
+    /// <summary>Üstteki tek satırlık şerit; açılır pencere yerine kullanılır.</summary>
+    private void ShowBar(string text, BarKind kind)
+    {
+        UpdateBarText.Text = text;
+        UpdateBarText.ToolTip = text;
+        UpdateBarButton.Visibility = kind == BarKind.Update ? Visibility.Visible : Visibility.Collapsed;
+        UpdateBar.Background = new SolidColorBrush(kind switch
+        {
+            BarKind.Update => Color.FromRgb(0xE6, 0xEE, 0xF7),
+            BarKind.Ok => Color.FromRgb(0xE3, 0xF4, 0xEA),
+            BarKind.Warn => Color.FromRgb(0xFF, 0xF4, 0xE5),
+            _ => Color.FromRgb(0xEE, 0xF1, 0xF5),
+        });
+        UpdateBar.Visibility = Visibility.Visible;
+    }
+
+    /// <param name="manual">"Güncellemeleri denetle"ye basıldı: sonuç ne olursa olsun söylenir, 12 saat kısıtı yok.</param>
+    private async Task CheckUpdatesAsync(bool manual)
+    {
+        if (_checking) return;
+        _checking = true;
+        if (manual) ShowBar("Güncellemeler denetleniyor…", BarKind.Info);
+        try
+        {
+            var rel = await Updater.CheckAsync(manual);
+            if (rel != null)
+            {
+                _update = rel;
+                if (UpdatePanel.Visibility != Visibility.Visible)
+                    ShowBar($"Yeni sürüm var: SWIFT PDF {Updater.Text(rel.Version)}", BarKind.Update);
+            }
+            else if (manual)
+            {
+                ShowBar($"En güncel sürüm sizde ({Updater.Text(Updater.Current)}).", BarKind.Ok);
+            }
+        }
+        catch (Exception)
+        {
+            // Kendiliğinden denetimde sessiz kalınır: internet yoksa programın işi aksamasın.
+            if (manual) ShowBar("Güncelleme bilgisi alınamadı. İnternet bağlantısını kontrol edip yeniden deneyin.", BarKind.Warn);
+        }
+        finally { _checking = false; }
+    }
+
+    private void OnCheckUpdates(object sender, RoutedEventArgs e)
+    {
+        if (!_busy) _ = CheckUpdatesAsync(manual: true);
+    }
+
+    private void OnUpdateBarClose(object sender, RoutedEventArgs e) => UpdateBar.Visibility = Visibility.Collapsed;
+
+    private void OnUpdateBarClick(object sender, RoutedEventArgs e)
+    {
+        if (_update == null || _busy) return;
+        UpdateTitle.Text = $"SWIFT PDF {Updater.Text(_update.Version)}";
+        UpdateSubtitle.Text = $"Kullandığınız sürüm: {Updater.Text(Updater.Current)}. Güncelleme birkaç saniye sürer; " +
+                              "program kapanıp yeni sürümle kendiliğinden açılır.";
+        UpdateNotes.Text = _update.Notes;
+        UpdateNotesScroll.ScrollToTop();
+        UpdateStatus.Visibility = Visibility.Collapsed;
+        UpdateProgress.Visibility = Visibility.Collapsed;
+        UpdateProgress.IsIndeterminate = false;
+        UpdateNowButton.Content = "Şimdi güncelle";
+        UpdateNowButton.IsEnabled = true;
+        UpdateCancelButton.IsEnabled = true;
+        UpdateBar.Visibility = Visibility.Collapsed;
+        Show(UpdatePanel);
+    }
+
+    private async void OnUpdateNow(object sender, RoutedEventArgs e)
+    {
+        if (_update == null || _busy) return;
+        var rel = _update;
+        SetBusy(true);
+        bool closing = false;
+        UpdateNowButton.IsEnabled = false;
+        UpdateStatus.Text = "İndiriliyor…";
+        UpdateStatus.Foreground = (Brush)FindResource("Muted");
+        UpdateStatus.Visibility = Visibility.Visible;
+        UpdateProgress.Value = 0;
+        UpdateProgress.Visibility = Visibility.Visible;
+        _downloadCts = new CancellationTokenSource();
+        try
+        {
+            var progress = new Progress<double>(p =>
+            {
+                UpdateProgress.Value = p;
+                UpdateStatus.Text = $"İndiriliyor… %{p * 100:0}";
+            });
+            var file = await Updater.DownloadAsync(rel, progress, _downloadCts.Token);
+
+            UpdateCancelButton.IsEnabled = false;
+            UpdateProgress.IsIndeterminate = true;
+            UpdateStatus.Text = "Kuruluyor. SWIFT PDF birkaç saniye içinde kapanıp yeni sürümle açılacak.";
+            await Task.Delay(1500);
+            Updater.Install(file, rel);
+            closing = true;
+            Application.Current.Shutdown();
+        }
+        catch (OperationCanceledException)
+        {
+            Show(IdlePanel);
+            ShowBar($"Yeni sürüm var: SWIFT PDF {Updater.Text(rel.Version)}", BarKind.Update);
+        }
+        catch (Exception ex)
+        {
+            UpdateProgress.Visibility = Visibility.Collapsed;
+            UpdateStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xB4, 0x23, 0x18));
+            UpdateStatus.Text = "Güncelleme yapılamadı: " + ex.Message + "\nSonra yeniden deneyebilir ya da yeni sürümü " +
+                                Updater.ReleasesPage + " adresinden indirebilirsiniz.";
+            UpdateNowButton.Content = "Yeniden dene";
+            UpdateNowButton.IsEnabled = true;
+            UpdateCancelButton.IsEnabled = true;
+        }
+        finally
+        {
+            _downloadCts?.Dispose();
+            _downloadCts = null;
+            if (!closing) SetBusy(false);
+        }
+    }
+
+    private void OnUpdateCancel(object sender, RoutedEventArgs e)
+    {
+        if (_downloadCts != null) { _downloadCts.Cancel(); return; }
+        Show(IdlePanel);
+        if (_update != null) ShowBar($"Yeni sürüm var: SWIFT PDF {Updater.Text(_update.Version)}", BarKind.Update);
     }
 }

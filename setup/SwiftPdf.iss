@@ -1,10 +1,16 @@
 ; SWIFT PDF kurulum paketi (Inno Setup 6)
 ; Önce: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ;        -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
-; Derleme: ISCC.exe setup\SwiftPdf.iss
+; Derleme: ISCC.exe setup\SwiftPdf.iss   (GitHub'da: .github\workflows\build.yml, /DAppVersion=<csproj Version>)
+;
+; Program kendini bu paketle günceller (Core\Updater.cs): /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS.
+; Sessiz kurulum bitince program [Run]'daki WizardSilent satırıyla yeniden açılır.
 
 #ifndef AppVersion
-  #define AppVersion "1.0.1"
+  #define AppVersion "1.1.0"
+#endif
+#ifndef PublishDir
+  #define PublishDir "..\publish"
 #endif
 #define AppName "SWIFT PDF"
 #define AppPublisher "Cuma Ali Dirik"
@@ -19,8 +25,9 @@ AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\SWIFT PDF
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
+; Hep kullanıcıya kurulur (yönetici istemez). "Herkes için" seçeneği yok: sessiz güncelleme başka klasöre ikinci
+; bir kopya kurmasın.
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=..\dist
 OutputBaseFilename=SwiftPdf-Setup-{#AppVersion}
 SetupIconFile=..\Assets\swiftpdf.ico
@@ -33,6 +40,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 CloseApplications=yes
+RestartApplications=no
 LicenseFile=..\LICENSE
 
 [Languages]
@@ -45,7 +53,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "..\publish\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PublishDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; DestName: "THIRD-PARTY-NOTICES.txt"; Flags: ignoreversion
 
@@ -55,6 +63,10 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; Program içinden yapılan (sessiz) güncellemeden sonra programı yeniden aç
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: WizardSilent
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\SwiftPdf\WebView2"
+Type: files; Name: "{localappdata}\SwiftPdf\guncelleme.json"
+Type: dirifempty; Name: "{localappdata}\SwiftPdf"

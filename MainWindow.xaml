@@ -1,7 +1,7 @@
 <Window x:Class="SwiftPdf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SWIFT PDF" Width="600" Height="560" MinWidth="520" MinHeight="480"
+        Title="SWIFT PDF" Width="600" Height="580" MinWidth="520" MinHeight="480"
         WindowStartupLocation="CenterScreen" Background="#F3F5F8"
         FontFamily="Segoe UI" FontSize="13" Foreground="#1F2933"
         AllowDrop="True" DragEnter="OnDragEnter" DragOver="OnDragEnter" DragLeave="OnDragLeave" Drop="OnDrop">
@@ -41,10 +41,24 @@
             <Setter Property="Foreground" Value="{StaticResource Accent}"/>
             <Setter Property="Background" Value="#E6EEF7"/>
         </Style>
+
+        <Style x:Key="BtnSmall" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
+        <Style x:Key="BtnIcon" TargetType="Button" BasedOn="{StaticResource Btn}">
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="9,4"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="22">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -60,8 +74,21 @@
             </StackPanel>
         </StackPanel>
 
+        <!-- Güncelleme şeridi: tek satır; metin gerekirse kısalır, düğmeler sağa sabit, hiçbir genişlikte itilmez -->
+        <Border Grid.Row="1" x:Name="UpdateBar" Visibility="Collapsed" Background="#E6EEF7" CornerRadius="10"
+                Padding="12,6,6,6" Margin="0,0,0,12">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right" x:Name="UpdateBarClose" Content="✕" Style="{StaticResource BtnIcon}"
+                        ToolTip="Kapat" Click="OnUpdateBarClose"/>
+                <Button DockPanel.Dock="Right" x:Name="UpdateBarButton" Content="Güncelle" Style="{StaticResource BtnSmall}"
+                        Click="OnUpdateBarClick"/>
+                <TextBlock x:Name="UpdateBarText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           FontWeight="SemiBold" Margin="0,0,10,0"/>
+            </DockPanel>
+        </Border>
+
         <!-- Bırakma alanı -->
-        <Border Grid.Row="1" x:Name="DropZone" Background="White" CornerRadius="14" Padding="24"
+        <Border Grid.Row="2" x:Name="DropZone" Background="White" CornerRadius="14" Padding="24"
                 BorderBrush="#C9D3DF" BorderThickness="2">
             <Grid>
                 <!-- Bekleme ekranı -->
@@ -138,17 +165,52 @@
                         </Border>
                     </StackPanel>
                 </DockPanel>
+
+                <!-- Güncelleme: düğmeler ve durum altta sabit; notlar kalan yerde kaydırılır, ne kadar uzun olursa
+                     olsun düğmeleri itmez (Mandal'daki sabit yükseklikli kart hatası burada olmasın diye) -->
+                <DockPanel x:Name="UpdatePanel" Visibility="Collapsed">
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <TextBlock x:Name="UpdateTitle" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="UpdateSubtitle" Foreground="{StaticResource Muted}" TextWrapping="Wrap"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                        <TextBlock x:Name="UpdateStatus" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed"/>
+                        <ProgressBar x:Name="UpdateProgress" Height="6" Maximum="1" Margin="0,0,0,12"
+                                     Foreground="{StaticResource Accent}" Visibility="Collapsed"/>
+                        <WrapPanel>
+                            <Button x:Name="UpdateNowButton" Content="Şimdi güncelle" Style="{StaticResource Btn}"
+                                    Click="OnUpdateNow"/>
+                            <Button x:Name="UpdateCancelButton" Content="Vazgeç" Style="{StaticResource BtnLight}"
+                                    Click="OnUpdateCancel"/>
+                        </WrapPanel>
+                    </StackPanel>
+                    <Border Background="#F6F8FB" CornerRadius="10" Padding="12,10">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Neler değişti" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ScrollViewer x:Name="UpdateNotesScroll" VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <TextBlock x:Name="UpdateNotes" TextWrapping="Wrap" LineHeight="19" Margin="0,0,6,0"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </DockPanel>
             </Grid>
         </Border>
 
-        <!-- Nasıl kullanılır -->
-        <Border Grid.Row="2" x:Name="HelpPanel" Margin="0,14,0,0" Padding="2,0">
+        <!-- Nasıl kullanılır + sürüm -->
+        <Border Grid.Row="3" x:Name="HelpPanel" Margin="0,14,0,0" Padding="2,0">
             <StackPanel>
                 <TextBlock Text="Nasıl kullanılır" FontWeight="SemiBold" Margin="0,0,0,4"/>
                 <TextBlock Foreground="{StaticResource Muted}" TextWrapping="Wrap" LineHeight="19">
                     1. Outlook'ta Kuveyt Türk'ün "Giden Döviz Transfer İşleminiz" mailini açın.<LineBreak/>
                     2. Acrobat sekmesinden "Adobe PDF'e dönüştür" deyip kaydedin.<LineBreak/>
                     3. O PDF'i bu pencereye bırakın; tek sayfa SWIFT PDF'i aynı klasöre kaydedilir.
+                </TextBlock>
+                <TextBlock Foreground="{StaticResource Muted}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap">
+                    <Run x:Name="VersionRun" Text="Sürüm"/>
+                    <Run Text="  ·  "/>
+                    <Hyperlink x:Name="CheckLink" Click="OnCheckUpdates" Foreground="{StaticResource Accent}">Güncellemeleri denetle</Hyperlink>
                 </TextBlock>
             </StackPanel>
         </Border>

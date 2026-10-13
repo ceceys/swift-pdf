@@ -1,0 +1,105 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "8.0.x"
+
+      # Sürüm tek yerden gelir: SwiftPdf.csproj <Version>. Etiket ve SURUM-NOTLARI.md'nin ilk bölümü onunla aynı
+      # olmalı; tutmazsa sürüm çıkmaz (program kendini eski sanıp sürekli güncelleme istemesin).
+      - name: Version check
+        id: ver
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content SwiftPdf.csproj -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          if (-not $v) { throw "SwiftPdf.csproj içinde <Version> yok" }
+          $first = Get-Content SURUM-NOTLARI.md -Encoding utf8 | Where-Object { $_.Trim() } | Select-Object -First 1
+          if (-not $first -or -not $first.StartsWith("$v ")) { throw "SURUM-NOTLARI.md ilk bölümü $v değil: '$first'" }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$v") {
+            throw "Etiket $env:GITHUB_REF_NAME ama csproj sürümü $v; ikisi aynı olmalı"
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          "Sürüm: $v"
+
+      # Program PDF'i WebView2 ile basar; sunucuda yoksa kurulur.
+      - name: WebView2 Runtime
+        shell: pwsh
+        run: |
+          $keys = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}',
+                  'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          function Pv { $keys | Where-Object { Test-Path $_ } | ForEach-Object { (Get-ItemProperty $_).pv } |
+                        Where-Object { $_ -and $_ -ne '0.0.0.0' } | Select-Object -First 1 }
+          $pv = Pv
+          if ($pv) { "WebView2 Runtime var: $pv"; exit 0 }
+          Invoke-WebRequest 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile "$env:RUNNER_TEMP\wv2.exe"
+          Start-Process "$env:RUNNER_TEMP\wv2.exe" -ArgumentList '/silent', '/install' -Wait
+          $pv = Pv
+          if (-not $pv) { throw "WebView2 Runtime kurulamadı" }
+          "WebView2 Runtime kuruldu: $pv"
+
+      - name: Build
+        run: dotnet build -c Release
+
+      # Uydurma vakalar Edge ile PDF'e basılır, program --test ile çalışır, satırlar birebir karşılaştırılır.
+      - name: Tests
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests\run.ps1
+
+      - name: Publish (single file, .NET included)
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
+
+      - name: Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = Get-Command iscc -ErrorAction SilentlyContinue
+          if (-not $iscc) { choco install innosetup --no-progress -y; $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" } else { $iscc = $iscc.Source }
+          & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" setup\SwiftPdf.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          # Kalıcı indirme bağlantısı için: releases/latest/download/SwiftPdf-Setup.exe
+          Copy-Item "dist\SwiftPdf-Setup-${{ steps.ver.outputs.version }}.exe" dist\SwiftPdf-Setup.exe
+
+      - name: Checksums (the app verifies downloads against this file)
+        shell: pwsh
+        run: |
+          $files = @("publish\SwiftPdf.exe") + (Get-ChildItem dist\*.exe | ForEach-Object FullName)
+          $lines = foreach ($f in $files) { "{0}  {1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLower(), (Split-Path $f -Leaf) }
+          $lines | Set-Content SHA256SUMS.txt -Encoding ascii
+          Get-Content SHA256SUMS.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: SwiftPdf
+          path: |
+            publish/SwiftPdf.exe
+            dist/*.exe
+            SHA256SUMS.txt
+
+      # Açıklama tek satır kalır. Program onu hiç göstermez; notları o sürümün SURUM-NOTLARI.md dosyasından okur.
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          name: SWIFT PDF ${{ steps.ver.outputs.version }}
+          files: |
+            publish/SwiftPdf.exe
+            dist/*.exe
+            SHA256SUMS.txt
+          body: "Neler değişti: https://github.com/ceceys/swift-pdf/blob/main/SURUM-NOTLARI.md"
+          generate_release_notes: false

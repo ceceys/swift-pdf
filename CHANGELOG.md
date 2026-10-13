@@ -1,5 +1,19 @@
 # Değişiklikler
 
+## 1.1.0 — 2026-10-13
+
+- Program içi güncelleme (GitHub Releases): açılışta en çok 12 saatte bir denetim, pencerenin üstünde tek satırlık
+  "Yeni sürüm var" şeridi, kullanıcı onayı olmadan indirme ve kurma yok. İndirilen dosya `SHA256SUMS.txt` ile
+  doğrulanır; kurulum sessiz çalışır, program kapanıp yeni sürümle açılır. Taşınabilir exe kendini değiştirir
+  (Türkçe harfli klasör yollarında da).
+- Güncelleme ekranı pencerenin içinde: notlar kendi alanında kaydırılır, düğmeler alta sabit; küçük ekranda ve
+  yüksek ölçekte de görünür kalır. Notlar GitHub sürüm açıklamasından değil `SURUM-NOTLARI.md`'den okunur.
+- "Güncellemeleri denetle" ve sürüm bilgisi pencerenin altında; güncellemeden sonraki ilk açılışta bilgi şeridi.
+- Pencere açılışta ekranın çalışma alanına sığdırılır.
+- Kurulum hep kullanıcıya özel (yönetici istemez); sessiz kurulumdan sonra program kendiliğinden açılır.
+- GitHub Actions: derleme, testler (`tests\run.ps1`), kurulum paketi, `SHA256SUMS.txt` ve sürüm; etiket ile csproj
+  sürümü ve sürüm notu denetlenir.
+
 ## 1.0.1 — 2026-10-13
 
 Kapsamlı sınama sonrası düzeltmeler (gerçek mailler ve uydurma vakalar; Edge, Word ve Adobe PDFMaker çıktıları,

@@ -7,6 +7,12 @@ yönlendirmesi ve uyarı paragrafları basılmaz.
 *English: a small Windows tool that turns the SWIFT message in Kuveyt Türk's "outgoing FX transfer" e-mail into a
 single-page A4 PDF containing only the raw SWIFT text.*
 
+## İndirme
+
+**[SwiftPdf-Setup.exe](https://github.com/ceceys/swift-pdf/releases/latest/download/SwiftPdf-Setup.exe)** (her zaman
+son sürüm; yönetici izni istemez). Kurmadan çalıştırmak için [Releases](https://github.com/ceceys/swift-pdf/releases)
+sayfasındaki `SwiftPdf.exe`. Exe imzalı değildir: Windows "bilgisayarınızı korudu" derse **Ek bilgi → Yine de çalıştır**.
+
 ## Nasıl kullanılır
 
 1. Outlook'ta Kuveyt Türk'ün "Giden Döviz Transfer İşleminiz" mailini açın.
@@ -24,7 +30,23 @@ birden çok SWIFT maili varsa her biri için ayrı PDF üretir.
 - Mailde SWIFT metni üç sütunlu bir tabloda durur (etiket, ":", değer). Dar sütunda alt satıra kayan etiketler
   ("Financial Institution Identification") ve değerler harflerin konumlarına bakılarak yeniden birleştirilir;
   satırlar bankanın SWIFT metnindeki düzene döner.
-- PDF, Windows'taki Microsoft Edge **WebView2** motoruyla basılır. İnternete bağlanılmaz; her şey bilgisayarda olur.
+- PDF, Windows'taki Microsoft Edge **WebView2** motoruyla basılır. PDF'ler bilgisayardan çıkmaz; dönüştürme için
+  internet gerekmez.
+
+## Güncelleme
+
+Program açılışta (en çok 12 saatte bir) GitHub'da yeni sürüm olup olmadığına bakar; internete çıktığı tek yer budur.
+Yeni sürüm varsa pencerenin üstünde "Yeni sürüm var" şeridi görünür. **Güncelle → Şimdi güncelle** denmeden hiçbir şey
+indirilmez. İndirilen dosya sürümdeki `SHA256SUMS.txt` ile doğrulanır; tutmazsa silinir. Kurulum sessiz çalışır,
+program kapanıp yeni sürümle açılır. Pencerenin altındaki **Güncellemeleri denetle** ile elle de bakılabilir.
+
+Yeni sürüm çıkarmak (bakımcı için):
+
+1. `SwiftPdf.csproj` içindeki `<Version>`, `SURUM-NOTLARI.md`'nin en üstüne yeni bölüm (kullanıcıya gösterilen kısa
+   notlar) ve `CHANGELOG.md` güncellenir, kaydedilip gönderilir; Actions yeşil olmalı.
+2. `git log -1 --oneline` ile kayıt görülür, sonra `git tag vX.Y.Z` ve `git push origin vX.Y.Z`.
+3. Actions derler, test eder, kurulum paketini ve `SHA256SUMS.txt`'yi Releases'a koyar. Etiket, csproj sürümü ve
+   notların ilk bölümü aynı değilse sürüm çıkmaz (program kendini eski sanıp sürekli güncelleme istemesin).
 
 ## Gereksinimler
 
